@@ -50,7 +50,7 @@ expect "unknown command fails" '[ "$rc" != 0 ]'
 # test above; here we just confirm the lock file gets created.
 fresh
 bash "$backend" join 93afae5963b868fd >/dev/null 2>&1
-expect "join creates the per-user lock file" '[ -f "$FAKE_DIR/omarchy-omanode.$(id -u).lock" ]'
+expect "join creates the per-user lock file" '[ -f "$FAKE_DIR/omarchy-omanodes.$(id -u).lock" ]'
 
 echo "----"
 echo "$pass passed, $fail failed"

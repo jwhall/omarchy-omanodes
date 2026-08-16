@@ -1,5 +1,5 @@
 #!/bin/bash
-# zerotier-cli backend for Omanode, the Omarchy ZeroTier widget.
+# zerotier-cli backend for Omanodes, the Omarchy ZeroTier widget.
 #
 # Unlike NetworkManager's D-Bus/polkit model (see Omawire), zerotier-one's
 # local API is authorized by a bearer token in
@@ -13,7 +13,7 @@
 # (interactive terminal) or pkexec (GUI, no TTY) — the same pattern
 # omarchy-dns uses. pkexec consults polkit, which is silent for an active
 # local session only if this plugin's polkit policy
-# (polkit/org.jwhall.omanode.policy) has been installed — see README. Until
+# (polkit/org.jwhall.omanodes.policy) has been installed — see README. Until
 # then, every poll pops an auth dialog, which is unusable for a 10-second
 # timer; the policy is not optional in practice.
 #
@@ -100,7 +100,7 @@ ensure_runtime_dir() {
 lock() {
   need flock
   ensure_runtime_dir
-  exec 9>>"$RUNTIME_DIR/omarchy-omanode.$(id -u).lock" || die "Cannot open the lock file"
+  exec 9>>"$RUNTIME_DIR/omarchy-omanodes.$(id -u).lock" || die "Cannot open the lock file"
   flock -w 30 9 || die "Another ZeroTier operation is already running"
 }
 

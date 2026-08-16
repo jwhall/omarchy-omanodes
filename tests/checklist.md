@@ -9,7 +9,7 @@ Things the fake `zerotier-cli` cannot prove — verify by hand against a real
   forever, if nobody authorizes it). Confirm the panel shows that status
   honestly rather than implying membership completed.
 - **The real pkexec/polkit prompt flow.** With the polkit policy
-  (`polkit/org.jwhall.omanode.policy`) *not* installed: confirm every
+  (`polkit/org.jwhall.omanodes.policy`) *not* installed: confirm every
   status poll pops a pkexec dialog (expected — this is why the policy isn't
   optional). With the policy installed and an active local session: confirm
   no prompt appears at all, for both reads (status) and joins/leaves.

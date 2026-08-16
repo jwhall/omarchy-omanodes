@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "id": "jwhall.omanode",
-  "name": "Omanode",
+  "id": "jwhall.omanodes",
+  "name": "Omanodes",
   "version": "1.0.0",
   "author": "jwhall",
   "license": "MIT",
@@ -13,7 +13,7 @@
     "barWidget": "Panel.qml"
   },
   "barWidget": {
-    "displayName": "Omanode",
+    "displayName": "Omanodes",
     "description": "List joined ZeroTier networks, join/leave by network ID, and view each network's assigned address. Requires zerotier-one and a one-time polkit policy install (see README).",
     "category": "Network",
     "allowMultiple": false,

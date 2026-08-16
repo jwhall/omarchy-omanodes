@@ -9,8 +9,8 @@ import qs.Ui
 
 Panel {
   id: root
-  moduleName: "jwhall.omanode"
-  ipcTarget: "jwhall.omanode"
+  moduleName: "jwhall.omanodes"
+  ipcTarget: "jwhall.omanodes"
   manageIpc: false
 
   property string focusSection: "header"
@@ -311,7 +311,7 @@ Panel {
             PanelHero {
               id: hero
               width: parent.width
-              title: "Omanode"
+              title: "Omanodes"
               meta: zerotier.networks.length + " network" + (zerotier.networks.length === 1 ? "" : "s")
               foreground: root.foreground
               fontFamily: root.fontFamily

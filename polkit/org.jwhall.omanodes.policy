@@ -2,7 +2,7 @@
 <!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
  "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
 <policyconfig>
-  <vendor>Omanode (jwhall.omanode) Omarchy plugin</vendor>
+  <vendor>Omanodes (jwhall.omanodes) Omarchy plugin</vendor>
 
   <!--
     Scopes pkexec to this plugin's backend.sh only — without this policy,
@@ -20,7 +20,7 @@
     copied to /usr/share/polkit-1/actions/ by the user (root is required to
     write there, so this plugin cannot do it for itself).
   -->
-  <action id="org.jwhall.omanode.run-backend">
+  <action id="org.jwhall.omanodes.run-backend">
     <description>Manage ZeroTier network membership</description>
     <message>Authentication is required to manage ZeroTier networks</message>
     <icon_name>network-wired</icon_name>

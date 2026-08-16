@@ -1,4 +1,4 @@
-# Omanode — ZeroTier networks in the Omarchy bar
+# Omanodes — ZeroTier networks in the Omarchy bar
 
 List, join, leave and inspect [ZeroTier](https://www.zerotier.com/) networks
 from the [Omarchy](https://github.com/basecamp/omarchy) bar.
@@ -35,13 +35,13 @@ prompt every few seconds).
 ### Install the polkit policy (required)
 
 ```bash
-sudo install -Dm644 polkit/org.jwhall.omanode.policy \
-  /usr/share/polkit-1/actions/org.jwhall.omanode.policy
+sudo install -Dm644 polkit/org.jwhall.omanodes.policy \
+  /usr/share/polkit-1/actions/org.jwhall.omanodes.policy
 sudo sed -i "s|@PLUGIN_DIR@|$(pwd)|" \
-  /usr/share/polkit-1/actions/org.jwhall.omanode.policy
+  /usr/share/polkit-1/actions/org.jwhall.omanodes.policy
 ```
 
-Run that from inside this plugin's directory (`~/.config/omarchy/plugins/jwhall.omanode`
+Run that from inside this plugin's directory (`~/.config/omarchy/plugins/jwhall.omanodes`
 by default) — the `sed` step fills in the absolute path to `backend.sh` so
 polkit knows to scope the exemption to this script specifically, not to
 `pkexec` in general. If you move the plugin directory afterward, re-run the
@@ -62,8 +62,8 @@ takes the `sudo` branch when stdin is a TTY, which the panel's background
 ## Install
 
 ```bash
-omarchy plugin add https://github.com/jwhall/omarchy-omanode.git
-omarchy plugin enable jwhall.omanode right
+omarchy plugin add https://github.com/jwhall/omarchy-omanodes.git
+omarchy plugin enable jwhall.omanodes right
 ```
 
 Then install the polkit policy as described above — the plugin will load
@@ -113,7 +113,7 @@ own API), which this plugin does not talk to.
 | `refreshIntervalSec` | `10` | 2–3600 |
 
 ```bash
-omarchy bar set jwhall.omanode refreshIntervalSec 30
+omarchy bar set jwhall.omanodes refreshIntervalSec 30
 ```
 
 Raising this reduces both polkit prompt frequency (if you haven't installed
@@ -125,18 +125,18 @@ approving your membership, etc.).
 ## IPC
 
 ```bash
-omarchy-shell jwhall.omanode open      # also: close, show, hide
-omarchy-shell jwhall.omanode refresh
-omarchy-shell jwhall.omanode status    # "N network(s) joined"
-omarchy-shell jwhall.omanode join 93afae5963b868fd
-omarchy-shell jwhall.omanode leave 93afae5963b868fd
+omarchy-shell jwhall.omanodes open      # also: close, show, hide
+omarchy-shell jwhall.omanodes refresh
+omarchy-shell jwhall.omanodes status    # "N network(s) joined"
+omarchy-shell jwhall.omanodes join 93afae5963b868fd
+omarchy-shell jwhall.omanodes leave 93afae5963b868fd
 ```
 
 ## What it touches
 
 - **`zerotier-cli -j listnetworks` / `join` / `leave`** — every call
   self-elevates to root via `pkexec`/`sudo`; see above.
-- `$XDG_RUNTIME_DIR/omarchy-omanode.<uid>.lock` — a per-user `flock` so
+- `$XDG_RUNTIME_DIR/omarchy-omanodes.<uid>.lock` — a per-user `flock` so
   concurrent join/leave clicks (one widget instance per monitor) serialize
   instead of racing. Private, gone at reboot.
 - No files outside of that lock; no state is persisted between sessions —
@@ -156,8 +156,8 @@ bash tests/run.sh
 ## Uninstall
 
 ```bash
-omarchy plugin remove jwhall.omanode
-sudo rm -f /usr/share/polkit-1/actions/org.jwhall.omanode.policy
+omarchy plugin remove jwhall.omanodes
+sudo rm -f /usr/share/polkit-1/actions/org.jwhall.omanodes.policy
 ```
 
 Your ZeroTier network memberships are unaffected — they belong to
