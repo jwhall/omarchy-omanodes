@@ -37,15 +37,24 @@ prompt every few seconds).
 ```bash
 sudo install -Dm644 polkit/org.jwhall.omanodes.policy \
   /usr/share/polkit-1/actions/org.jwhall.omanodes.policy
-sudo sed -i "s|@PLUGIN_DIR@|$(pwd)|" \
+sudo sed -i "s|@PLUGIN_DIR@|$(readlink -f .)|" \
   /usr/share/polkit-1/actions/org.jwhall.omanodes.policy
 ```
 
 Run that from inside this plugin's directory (`~/.config/omarchy/plugins/jwhall.omanodes`
 by default) — the `sed` step fills in the absolute path to `backend.sh` so
 polkit knows to scope the exemption to this script specifically, not to
-`pkexec` in general. If you move the plugin directory afterward, re-run the
-`sed` step with the new path.
+`pkexec` in general. Use `readlink -f .`, not `pwd`: `backend.sh`'s own
+`self_path()` resolves through symlinks (`readlink -f "${BASH_SOURCE[0]}"`)
+before invoking `pkexec`, so if `~/.config/omarchy` (or this plugin
+directory) is itself a symlink — common with dotfiles managers — `pwd`
+captures the symlinked view path while pkexec is actually invoked with the
+resolved physical path. Those must match exactly or polkit silently falls
+back to the generic, always-prompts `org.freedesktop.policykit.exec`
+action instead of this scoped one (check `journalctl -u polkit` for that
+action name if the panel keeps prompting after installing the policy). If
+you move the plugin directory afterward, re-run the `sed` step with the
+new path.
 
 The policy grants `allow_active=yes`: an active local graphical session runs
 the backend without a password, the same trust level NetworkManager's own
