@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "jwhall.omanode",
+  "name": "Omanode",
+  "version": "1.0.0",
+  "author": "jwhall",
+  "license": "MIT",
+  "description": "Join, leave and inspect ZeroTier networks from the Omarchy bar. Unofficial third-party widget for ZeroTier networks; not affiliated with ZeroTier, Inc.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Omanode",
+    "description": "List joined ZeroTier networks, join/leave by network ID, and view each network's assigned address. Requires zerotier-one and a one-time polkit policy install (see README).",
+    "category": "Network",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "refreshIntervalSec": 10
+    },
+    "schema": [
+      {
+        "key": "refreshIntervalSec",
+        "type": "integer",
+        "label": "Refresh interval (seconds)",
+        "min": 2,
+        "max": 3600,
+        "step": 1,
+        "defaultValue": 10
+      }
+    ]
+  }
+}

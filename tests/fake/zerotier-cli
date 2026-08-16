@@ -1,0 +1,39 @@
+#!/bin/bash
+# Fake zerotier-cli for backend tests. State lives in $FAKE_DIR:
+#   networks.json     the JSON array `-j listnetworks` should print
+#   fail-listnetworks  if present, listnetworks fails
+#   fail-join.<nwid>   if present, `join <nwid>` fails
+#   fail-leave.<nwid>  if present, `leave <nwid>` fails
+#   log                every invocation, one line
+set -u
+echo "zerotier-cli $*" >> "$FAKE_DIR/log"
+
+case "$*" in
+  "-j listnetworks")
+    [ -e "$FAKE_DIR/fail-listnetworks" ] && { echo "Error: could not list networks" >&2; exit 1; }
+    cat "$FAKE_DIR/networks.json" 2>/dev/null || echo "[]"
+    exit 0 ;;
+esac
+
+if [ "${1:-}" = "join" ]; then
+  nwid="${2:-}"
+  if [ -e "$FAKE_DIR/fail-join.$nwid" ]; then
+    echo "Error: could not join $nwid" >&2
+    exit 1
+  fi
+  echo "200 join OK"
+  exit 0
+fi
+
+if [ "${1:-}" = "leave" ]; then
+  nwid="${2:-}"
+  if [ -e "$FAKE_DIR/fail-leave.$nwid" ]; then
+    echo "Error: could not leave $nwid" >&2
+    exit 1
+  fi
+  echo "200 leave OK"
+  exit 0
+fi
+
+echo "fake-zerotier-cli: unhandled: $*" >&2
+exit 99
