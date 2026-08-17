@@ -9,13 +9,24 @@
 # just joins/leaves. This is a real difference from Omawire and means the
 # status poll that drives the panel also self-elevates on every tick.
 #
-# require_root() below execs the script back into itself as root via sudo
-# (interactive terminal) or pkexec (GUI, no TTY) — the same pattern
-# omarchy-dns uses. pkexec consults polkit, which is silent for an active
-# local session only if this plugin's polkit policy
-# (polkit/org.jwhall.omanodes.policy) has been installed — see README. Until
-# then, every poll pops an auth dialog, which is unusable for a 10-second
-# timer; the policy is not optional in practice.
+# require_root() below execs as root via sudo (interactive terminal) or
+# pkexec (GUI, no TTY) — the same pattern omarchy-dns uses. pkexec consults
+# polkit, which is silent for an active local session only if this plugin's
+# polkit policy (polkit/org.jwhall.omanodes.policy) has been installed — see
+# README. Until then, every poll pops an auth dialog, which is unusable for
+# a 10-second timer; the policy is not optional in practice.
+#
+# The pkexec branch execs SYSTEM_BACKEND, a root-owned copy installed
+# outside this (user-writable) plugin checkout — never self_path(). polkit's
+# allow_active=yes only vouches for physical presence at the session, not
+# for administrative trust, so the file named in the policy's
+# org.freedesktop.policykit.exec.path must not be writable by the account
+# the policy authorizes. self_path() lives under the plugin checkout, which
+# that same active user owns; pointing pkexec at it would let any local
+# session — not just an admin one — edit backend.sh and have root run their
+# edit on the next poll. The sudo branch is unaffected: sudo demands the
+# invoking user's own password rather than trusting session-activity alone,
+# so re-execing self_path() there isn't a privilege boundary.
 #
 # Mutating commands (join/leave) serialize on a per-user flock, same
 # reasoning as Omawire: the bar builds one widget instance per monitor.
@@ -30,6 +41,12 @@ set -u
 set -o pipefail
 export LC_ALL=C
 umask 077
+
+# Root-owned, non-user-writable copy that the polkit policy's
+# org.freedesktop.policykit.exec.path points to. Installed separately (see
+# README) — must be kept in sync by re-running that install step whenever
+# this script changes.
+SYSTEM_BACKEND="/usr/lib/omanodes/backend.sh"
 
 die() { printf '%s\n' "$*" >&2; exit 1; }
 
@@ -49,7 +66,7 @@ require_root() {
   if [[ -t 0 ]]; then
     exec sudo "$(self_path)" "$@"
   else
-    exec pkexec "$(self_path)" "$@"
+    exec pkexec "$SYSTEM_BACKEND" "$@"
   fi
 }
 

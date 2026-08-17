@@ -5,7 +5,7 @@
   <vendor>Omanodes (jwhall.omanodes) Omarchy plugin</vendor>
 
   <!--
-    Scopes pkexec to this plugin's backend.sh only — without this policy,
+    Scopes pkexec to a single fixed backend script — without this policy,
     pkexec falls back to the generic "run an arbitrary command as root"
     action, which always prompts and looks alarming.
 
@@ -16,9 +16,19 @@
     backend every refreshIntervalSec, and a password prompt on every tick
     would make the widget unusable.
 
-    Install path: see README.md ("Install" section) — this file must be
-    copied to /usr/share/polkit-1/actions/ by the user (root is required to
-    write there, so this plugin cannot do it for itself).
+    exec.path deliberately points at a root-owned copy installed to
+    /usr/lib/omanodes/backend.sh, NOT at the plugin's own checkout under
+    ~/.config/omarchy/plugins/. allow_active=yes vouches only for physical
+    presence at the session, not for administrative trust — pointing this
+    at anything the authorized (non-admin) user can write would let that
+    user edit the target and have it run as root on the next poll. See
+    https://github.com/HANCORE-linux/omarchy-plugin-marketplace/issues/356
+    for the finding this fixed.
+
+    Install path: see README.md ("Install" section) — both this file and
+    the backend copy it points to must be installed by the user (root is
+    required to write to either location, so this plugin cannot do it for
+    itself).
   -->
   <action id="org.jwhall.omanodes.run-backend">
     <description>Manage ZeroTier network membership</description>
@@ -29,7 +39,7 @@
       <allow_inactive>no</allow_inactive>
       <allow_active>yes</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.exec.path">@PLUGIN_DIR@/backend.sh</annotate>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/omanodes/backend.sh</annotate>
     <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
   </action>
 </policyconfig>
