@@ -50,7 +50,16 @@ expect "unknown command fails" '[ "$rc" != 0 ]'
 # test above; here we just confirm the lock file gets created.
 fresh
 bash "$backend" join 93afae5963b868fd >/dev/null 2>&1
-expect "join creates the per-user lock file" '[ -f "$FAKE_DIR/omarchy-omanodes.$(id -u).lock" ]'
+expect "join creates the per-user lock dir" '[ -d "$FAKE_DIR/omarchy-omanodes.$(id -u).lock.d" ]'
+
+# A symlink planted at the lock path must not be followed: the backend runs
+# as root here in production, so following it would let an unprivileged user
+# have root create arbitrary files (e.g. /etc/nologin).
+fresh
+target="$FAKE_DIR/should-not-be-created"
+ln -s "$target" "$FAKE_DIR/omarchy-omanodes.$(id -u).lock.d"
+bash "$backend" join 93afae5963b868fd >/dev/null 2>&1
+expect "lock does not follow a symlink at the lock path" '[ ! -e "$target" ]'
 
 echo "----"
 echo "$pass passed, $fail failed"

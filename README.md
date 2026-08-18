@@ -57,13 +57,36 @@ policy's exemption always runs whatever is currently installed at
 `/usr/lib/omanodes/backend.sh`, not the plugin checkout's copy.
 
 If you'd rather not install a system-wide polkit action, the alternative is
-a `sudo` `NOPASSWD` rule scoped to `zerotier-cli` in `/etc/sudoers.d/`
-(`visudo -f /etc/sudoers.d/zerotier-widget`) — but note `backend.sh` only
-takes the `sudo` branch when stdin is a TTY, which the panel's background
-`Process` invocations are not, so this path only helps if you also adjust
-`require_root()` or invoke the backend from a terminal yourself. As with
-the polkit policy, scope any such sudoers rule to a root-owned script path,
-never to a path under the plugin checkout.
+a `sudo` `NOPASSWD` rule in `/etc/sudoers.d/`
+(`visudo -f /etc/sudoers.d/omanodes`), scoped to the installed root-owned
+backend and to the exact three commands it accepts:
+
+```
+Cmnd_Alias OMANODES = /usr/lib/omanodes/backend.sh status, \
+                      /usr/lib/omanodes/backend.sh join [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f], \
+                      /usr/lib/omanodes/backend.sh leave [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]
+youruser ALL=(root) NOPASSWD: OMANODES
+```
+
+(The 16 repeated character classes are sudo's glob syntax for "exactly 16
+lowercase hex digits" — sudo has no counted-repeat form. `zerotier-cli`
+prints network IDs in lowercase; add `A-F` to the classes if you type them
+uppercase.)
+
+**Do not** write the rule as `NOPASSWD: /usr/bin/zerotier-cli` (or any
+unbounded command). Passwordless `zerotier-cli` with no argument bound hands
+the account its entire root command surface — `zerotier-cli set ...` and
+friends reconfigure the node, and an unbounded rule is a standing
+passwordless-root primitive rather than the three operations this widget
+needs. Likewise, never point the rule at `backend.sh` inside the plugin
+checkout: `NOPASSWD` removes the password boundary that normally makes a
+user-writable target safe under `sudo`, so it must name the root-owned
+`/usr/lib/omanodes/backend.sh` — which is also what `require_root()` execs.
+
+Note that `backend.sh` only takes the `sudo` branch when stdin is a TTY,
+which the panel's background `Process` invocations are not, so this path
+only helps if you also adjust `require_root()` or invoke the backend from a
+terminal yourself.
 
 ## Install
 
@@ -142,7 +165,7 @@ omarchy-shell jwhall.omanodes leave 93afae5963b868fd
 
 - **`zerotier-cli -j listnetworks` / `join` / `leave`** — every call
   self-elevates to root via `pkexec`/`sudo`; see above.
-- `$XDG_RUNTIME_DIR/omarchy-omanodes.<uid>.lock` — a per-user `flock` so
+- `$XDG_RUNTIME_DIR/omarchy-omanodes.<uid>.lock.d` — a per-user `flock` so
   concurrent join/leave clicks (one widget instance per monitor) serialize
   instead of racing. Private, gone at reboot.
 - No files outside of that lock; no state is persisted between sessions —

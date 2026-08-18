@@ -41,3 +41,15 @@ Things the fake `zerotier-cli` cannot prove — verify by hand against a real
   it strips `XDG_RUNTIME_DIR`, and the old code fell back to root's own
   `/run/user/0`, which doesn't exist) — confirm this keeps working after
   any future change to `require_root()`/`ensure_runtime_dir()`.
+- **Root ignores a caller-supplied `XDG_RUNTIME_DIR`.** Same `EUID`
+  limitation: `tests/run.sh` only ever exercises the unprivileged branch,
+  where honouring `XDG_RUNTIME_DIR` is correct. Verify by hand that the root
+  branch does not: `sudo XDG_RUNTIME_DIR=/tmp/decoy /usr/lib/omanodes/backend.sh
+  join <nwid>` (with `/tmp/decoy` a 0700 dir you own) must create its lock
+  under `/run/user/<your uid>/`, and leave `/tmp/decoy` empty.
+- **Root runs with a pinned `PATH`.** Put a fake `zerotier-cli` earlier in
+  `PATH` than `/usr/bin` and confirm an elevated invocation still runs the
+  real one — e.g. `sudo PATH=/tmp/evil:$PATH /usr/lib/omanodes/backend.sh status`
+  should return real network JSON, not the fake's output. (`pkexec` and
+  sudo's `secure_path` would each stop this on a stock system; the point is
+  that the script no longer depends on either.)
