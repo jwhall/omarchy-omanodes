@@ -53,3 +53,12 @@ Things the fake `zerotier-cli` cannot prove — verify by hand against a real
   should return real network JSON, not the fake's output. (`pkexec` and
   sudo's `secure_path` would each stop this on a stock system; the point is
   that the script no longer depends on either.)
+- **A hostile network name against the real widget.** `tests/richtext-probe.py`
+  exercises Qt's rich-text behaviour in a bare scene, not this plugin's actual
+  QML (which needs the Quickshell runtime and the `qs.Ui` library). With a
+  controller you own, set a network's name to
+  `<img src="http://127.0.0.1:8000/beacon.png">`, point `python3 -m http.server`
+  at that port, and confirm no request arrives while the panel, the network
+  detail window, the leave-confirmation dialog and the truncated-value tooltip
+  are all on screen — and that the name renders as literal text with `‹`/`›`
+  rather than disappearing into an image placeholder.

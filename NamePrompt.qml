@@ -82,6 +82,7 @@ Item {
         Text {
           width: parent.width
           text: prompt.title
+          textFormat: Text.PlainText
           color: prompt.foreground
           font.family: prompt.fontFamily
           font.pixelSize: Style.font.title
@@ -101,6 +102,7 @@ Item {
         Text {
           width: parent.width
           text: prompt.hint
+          textFormat: Text.PlainText
           color: prompt.accepted ? prompt.dim : prompt.urgent
           font.family: prompt.fontFamily
           font.pixelSize: Style.font.caption

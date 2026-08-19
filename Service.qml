@@ -28,6 +28,34 @@ Item {
   readonly property bool busy: controlProcess.running
   readonly property int refreshIntervalSec: intSetting("refreshIntervalSec", 10, 2, 3600)
 
+  // Controller-supplied strings — a network's `name` above all — are
+  // attacker-controlled text that ends up in QML Text elements. QML's
+  // default `textFormat: Text.AutoText` hands anything Qt::mightBeRichText()
+  // recognises to the rich-text engine, and that engine resolves `<img src>`
+  // (and `<a href>`) URLs from inside the shell process: a crafted name
+  // would turn merely *displaying* the network list into an outbound request
+  // to the controller operator's host, or a local file read, with no
+  // interaction at all.
+  //
+  // Every Text this plugin owns now pins `textFormat: Text.PlainText`, but
+  // the shared `qs.Ui` components this widget passes text to (PanelToolTip,
+  // ConfirmDialog) live outside this repo and still render AutoText. So the
+  // markup is neutralised here as well, at the one point where untrusted
+  // text enters the model, rather than relying on every present and future
+  // sink to opt out of rich text.
+  //
+  // `<` and `>` are what make Qt::mightBeRichText() true and are the only
+  // characters that can open a tag; the lookalikes keep a name readable.
+  // An escaped `&lt;` can still flip a stray AutoText sink into rich-text
+  // mode, but entity decoding happens after tokenisation, so it can only
+  // ever produce a literal `<` glyph in a text run — never a tag.
+  function plain(value) {
+    return String(value === undefined || value === null ? "" : value)
+      .replace(/[\u0000-\u001f\u007f-\u009f]/g, " ")
+      .replace(/</g, "\u2039")
+      .replace(/>/g, "\u203a")
+  }
+
   function setting(name, fallback) {
     var value = settings ? settings[name] : undefined
     return value === undefined || value === null ? fallback : value
@@ -96,15 +124,17 @@ Item {
       var n = parsed[i]
       if (!n || !n.id) continue
       var addrs = Array.isArray(n.assignedAddresses) ? n.assignedAddresses : []
+      // Every field here comes from the controller by way of zerotier-cli,
+      // so every one of them is untrusted text — see plain().
       list.push({
-        nwid: String(n.id),
-        name: String(n.name || ""),
-        status: String(n.status || ""),
-        type: String(n.type || ""),
-        mac: String(n.mac || ""),
-        portDeviceName: String(n.portDeviceName || ""),
-        assignedIp: addrs.length > 0 ? String(addrs[0]) : "",
-        assignedIps: addrs.map(function(a) { return String(a) })
+        nwid: plain(n.id),
+        name: plain(n.name),
+        status: plain(n.status),
+        type: plain(n.type),
+        mac: plain(n.mac),
+        portDeviceName: plain(n.portDeviceName),
+        assignedIp: addrs.length > 0 ? plain(addrs[0]) : "",
+        assignedIps: addrs.map(function(a) { return plain(a) })
       })
     }
     list.sort(function(a, b) {
@@ -145,8 +175,11 @@ Item {
     controlProcess.running = true
   }
 
+  // Backend/zerotier-cli stderr is the other untrusted channel — it can
+  // quote a controller-supplied name straight back at us — so it goes
+  // through plain() too before it becomes displayable text.
   function elide(text) {
-    var value = String(text || "").replace(/\s+/g, " ").trim()
+    var value = plain(text).replace(/\s+/g, " ").trim()
     return value.length > 140 ? value.substring(0, 137) + "…" : value
   }
 

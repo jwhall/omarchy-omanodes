@@ -363,6 +363,7 @@ Panel {
             visible: zerotier.actionStatus !== "" || zerotier.lastError !== ""
             width: parent.width
             text: zerotier.actionStatus !== "" ? zerotier.actionStatus : zerotier.lastError
+            textFormat: Text.PlainText
             color: zerotier.lastError !== "" && zerotier.actionStatus === "" ? root.urgent : root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
@@ -387,6 +388,7 @@ Panel {
               visible: zerotier.networks.length === 0
               width: parent.width
               text: "No ZeroTier networks joined\nJoin one with the + button or n"
+              textFormat: Text.PlainText
               color: root.dim
               font.family: root.fontFamily
               font.pixelSize: Style.font.body
@@ -420,6 +422,10 @@ Panel {
         id: leaveDialog
         anchors.fill: parent
         opened: root.pendingLeave !== null
+        // ConfirmDialog is a shared qs.Ui component and renders its message
+        // with QML's default AutoText, so the network name interpolated here
+        // is safe only because Service.plain() already neutralised it on the
+        // way into the model.
         message: "Leave network " + (root.pendingLeave ? (root.pendingLeave.name || root.pendingLeave.nwid) : "") + "?"
         confirmText: "Leave"
         foreground: root.foreground
@@ -504,6 +510,7 @@ Panel {
 
       Text {
         text: networkRow.joined ? "󰄬" : "󰅙"
+        textFormat: Text.PlainText
         color: networkRow.joined ? root.foreground : root.urgent
         font.family: root.fontFamily
         font.pixelSize: Style.font.icon
@@ -518,6 +525,7 @@ Panel {
         Text {
           Layout.fillWidth: true
           text: networkRow.network ? (networkRow.network.name || networkRow.network.nwid) : ""
+          textFormat: Text.PlainText
           color: root.foreground
           font.family: root.fontFamily
           font.pixelSize: Style.font.body
@@ -533,6 +541,7 @@ Panel {
             else parts.push(networkRow.network.status)
             return parts.join(" · ")
           }
+          textFormat: Text.PlainText
           color: root.dim
           font.family: root.fontFamily
           font.pixelSize: Style.font.caption

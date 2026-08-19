@@ -174,13 +174,41 @@ omarchy-shell jwhall.omanodes leave 93afae5963b868fd
 
 ## Tests
 
-`tests/` runs `backend.sh` against a fake `zerotier-cli` on `PATH`, plus a
+`tests/` runs `backend.sh` against a fake `zerotier-cli` on `PATH`, checks
+the QML side against controller-supplied text (see below), and keeps a
 manual checklist (`tests/checklist.md`) for what needs a real `zerotier-one`
 service and a real polkit prompt:
 
 ```bash
 bash tests/run.sh
 ```
+
+`tests/test-qml-markup.sh` needs Qt's `qml` runtime (`qt6-declarative`) for
+its runtime half and skips that part if it is missing; the static half always
+runs.
+
+## Untrusted text from the controller
+
+A network's `name` is set on the ZeroTier controller, not on this host, so it
+is untrusted input to the widget. QML's default `textFormat: Text.AutoText`
+sends anything Qt recognises as markup to the rich-text engine, which resolves
+`<img src>` and `<a href>` URLs from inside the shell process — so a crafted
+name could make simply opening the panel fetch a remote URL or read a local
+file.
+
+Two layers close that off:
+
+- every `Text` element in this plugin pins `textFormat: Text.PlainText`, and
+- `Service.plain()` neutralises `<`/`>` and control characters at the single
+  point where controller data (and backend stderr) enters the model, which
+  also covers the shared `qs.Ui` components this widget hands text to
+  (`PanelToolTip`, `ConfirmDialog`) — those live outside this repo and still
+  render `AutoText`.
+
+`tests/richtext-probe.py` proves both in a real Qt scene against a loopback
+HTTP server: the unmitigated `AutoText` case must fetch the beacon (otherwise
+the probe is not measuring anything), while the `PlainText` case and
+`plain()`'s output must not.
 
 ## Uninstall
 

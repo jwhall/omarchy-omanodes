@@ -66,6 +66,7 @@ PanelWindow {
       anchors.verticalCenter: parent.verticalCenter
       width: Style.space(90)
       text: pairRow.label
+      textFormat: Text.PlainText
       color: root.foreground
       opacity: 0.6
       font.family: root.fontFamily
@@ -79,6 +80,7 @@ PanelWindow {
       anchors.right: parent.right
       anchors.verticalCenter: parent.verticalCenter
       text: pairRow.value
+      textFormat: Text.PlainText
       color: root.foreground
       font.family: root.fontFamily
       font.pixelSize: Style.font.bodySmall
@@ -93,6 +95,9 @@ PanelWindow {
         onClicked: root.copyRequested(pairRow.value)
       }
 
+      // Same as ConfirmDialog in Panel.qml: PanelToolTip lives in the shared
+      // qs.Ui library and renders AutoText, so this value is safe only
+      // because Service.plain() neutralised it at the model boundary.
       PanelToolTip {
         visible: pairRow.copyable && parent.truncated
         text: pairRow.value
@@ -146,6 +151,7 @@ PanelWindow {
         Text {
           width: parent.width
           text: root.title
+          textFormat: Text.PlainText
           color: root.foreground
           font.family: root.fontFamily
           font.pixelSize: Style.font.title
