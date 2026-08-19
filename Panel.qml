@@ -129,6 +129,28 @@ Panel {
     pendingLeave = network
   }
 
+  // Leaving a network is the only destructive action this widget exposes, and
+  // a controller-supplied name is not a trustworthy label to hang it on:
+  // Unicode confusables and zero-width characters can make one network's name
+  // render identically to another's, and unlike the bidi controls that
+  // Service.plain() drops, no string sanitising fixes that in general —
+  // banning non-Latin scripts is not an option.
+  //
+  // The nwid is formatted by the local zerotier-one daemon rather than being
+  // free-form controller text, so it is the one identifier on this surface a
+  // controller cannot forge. Showing it next to the name anchors the decision
+  // to something unspoofable. The name is length-bounded so it can never wrap
+  // the nwid off the bottom of ConfirmDialog's card.
+  function leaveMessage(network) {
+    if (!network) return ""
+    var nwid = String(network.nwid || "")
+    var name = String(network.name || "")
+    if (name.length > 40) name = name.substring(0, 39) + "…"
+    return name === ""
+      ? "Leave network " + nwid + "?"
+      : "Leave network " + name + " (" + nwid + ")?"
+  }
+
   function openJoinWindow() {
     joinField.openWith("")
     joinWindowOpen = true
@@ -423,10 +445,10 @@ Panel {
         anchors.fill: parent
         opened: root.pendingLeave !== null
         // ConfirmDialog is a shared qs.Ui component and renders its message
-        // with QML's default AutoText, so the network name interpolated here
+        // with QML's default AutoText, so the network name inside this string
         // is safe only because Service.plain() already neutralised it on the
-        // way into the model.
-        message: "Leave network " + (root.pendingLeave ? (root.pendingLeave.name || root.pendingLeave.nwid) : "") + "?"
+        // way into the model. See leaveMessage() for why the nwid is in here.
+        message: root.leaveMessage(root.pendingLeave)
         confirmText: "Leave"
         foreground: root.foreground
         fontFamily: root.fontFamily

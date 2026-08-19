@@ -27,7 +27,7 @@ import tempfile
 import threading
 from urllib.parse import unquote
 
-SERVICE, QMLBIN = sys.argv[1], sys.argv[2]
+SERVICE, PANEL, QMLBIN = sys.argv[1], sys.argv[2], sys.argv[3]
 
 hits = set()
 hits_lock = threading.Lock()
@@ -49,6 +49,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
     def log_message(self, *args):
         pass
+
+
+def extract_function(path, signature):
+    """Pull a function out of the shipped QML by its signature, so the probe
+    exercises the real implementation rather than a copy that can drift."""
+    src = open(path, encoding="utf-8").read()
+    start = src.index("  " + signature)
+    end = src.index("\n  }\n", start) + len("\n  }\n")
+    return src[start:end]
 
 
 def extract_plain(path):
@@ -148,6 +157,17 @@ FIDELITY = [
     ("a & b", "a & b"),
     ("<img src=x>", "\u2039img src=x\u203a"),
     ("na\u0007me", "na me"),
+    # Explicit bidi overrides/embeddings/isolates are dropped: they reorder
+    # how the name renders and can make one network read like another.
+    ("\u202ehome_lan", "home_lan"),
+    ("a\u202db\u202cc", "abc"),
+    ("\u2066x\u2069y", "xy"),
+    # Kept: directional marks cannot override a run, and ZWNJ/ZWJ are needed
+    # for correct rendering of Persian, Indic scripts and emoji sequences.
+    ("\u200ehome\u200flan", "\u200ehome\u200flan"),
+    ("zero\u200cwidth\u200djoin", "zero\u200cwidth\u200djoin"),
+    # Legitimate RTL renders from inherent directionality, no override needed.
+    ("\u05e8\u05e9\u05ea net", "\u05e8\u05e9\u05ea net"),
 ]
 FIDELITY_TEMPLATE = """import QtQuick
 
@@ -190,6 +210,63 @@ for src, want in FIDELITY:
     if not ok:
         failures.append("plain(%r) did not produce %r; got one of %r"
                         % (src, want, sorted(seen)))
+
+# Panel.leaveMessage(): the leave confirmation is the one destructive action
+# here, so it must always carry the nwid -- the only identifier on that surface
+# a controller cannot spoof with confusables or zero-width characters.
+leave_fn = extract_function(PANEL, "function leaveMessage(network) {")
+LEAVE = [
+    ({"nwid": "93afae5963b868fd", "name": "home_lan"},
+     "Leave network home_lan (93afae5963b868fd)?"),
+    # No name at all: still identifies the network.
+    ({"nwid": "93afae5963b868fd", "name": ""},
+     "Leave network 93afae5963b868fd?"),
+    # A name long enough to wrap the nwid off the card is bounded first.
+    ({"nwid": "93afae5963b868fd", "name": "N" * 60},
+     "Leave network " + "N" * 39 + "\u2026 (93afae5963b868fd)?"),
+]
+LEAVE_TEMPLATE = """import QtQuick
+
+Item {{
+  width: 64
+  height: 64
+
+{leave_fn}
+  Repeater {{
+    model: {cases}
+    Image {{
+      required property var modelData
+      source: "http://127.0.0.1:{port}/leave?v=" + encodeURIComponent(leaveMessage(modelData))
+    }}
+  }}
+
+  Timer {{ interval: 2500; running: true; onTriggered: Qt.quit() }}
+}}
+"""
+with tempfile.NamedTemporaryFile("w", suffix=".qml", delete=False,
+                                 encoding="utf-8") as fh:
+    fh.write(LEAVE_TEMPLATE.format(leave_fn=leave_fn, port=port,
+                                   cases=json.dumps([c[0] for c in LEAVE])))
+    leave_path = fh.name
+try:
+    proc = subprocess.run([QMLBIN, leave_path], env=env, timeout=60,
+                          capture_output=True, text=True)
+finally:
+    os.unlink(leave_path)
+
+with hits_lock:
+    seen_leave = {unquote(h.split("?v=", 1)[1])
+                  for h in hits if h.startswith("/leave?v=")}
+for src, want in LEAVE:
+    ok = want in seen_leave
+    print("  leaveMessage(name=%-22s) -> %s"
+          % (json.dumps(src["name"])[:22],
+             ("ok  " + json.dumps(want)) if ok else "MISMATCH (not produced)"))
+    if not ok:
+        failures.append("leaveMessage(%r) did not produce %r; got %r"
+                        % (src, want, sorted(seen_leave)))
+    if "93afae5963b868fd" not in want:
+        failures.append("test bug: expectation %r omits the nwid" % want)
 
 server.shutdown()
 if failures:

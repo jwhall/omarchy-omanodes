@@ -62,3 +62,14 @@ Things the fake `zerotier-cli` cannot prove — verify by hand against a real
   detail window, the leave-confirmation dialog and the truncated-value tooltip
   are all on screen — and that the name renders as literal text with `‹`/`›`
   rather than disappearing into an image placeholder.
+- **A bidi-spoofed network name.** `plain()` drops explicit bidi controls, but
+  only the real widget shows whether the result reads honestly. Set a network
+  name containing U+202E (e.g. `net‮gnitset`) on a controller you own and
+  confirm the panel row, the detail window and the leave dialog all render it
+  left-to-right with no reordering. Then confirm a legitimately right-to-left
+  name (Hebrew or Arabic, no explicit override characters) still renders
+  correctly — that is the case stripping must not break.
+- **The leave confirmation carries the nwid.** Open the leave dialog for any
+  network and confirm the 16-hex ID is visible alongside the name, including
+  when the name is long enough to wrap. This is what makes the destructive
+  action safe against Unicode confusables, which no sanitising can catch.

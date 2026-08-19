@@ -62,16 +62,28 @@ expect "Service.qml sanitises controller fields into the model" \
 expect "Service.qml sanitises backend stderr before display" \
   'grep -q "var value = plain(text)" "$root/Service.qml"'
 
+# Explicit bidi controls reorder how a name renders; the directional marks and
+# joiners must survive, because stripping those breaks legitimate scripts.
+expect "Service.qml drops explicit bidi overrides/isolates" \
+  'grep -qF "\\u202a-\\u202e\\u2066-\\u2069" "$root/Service.qml"'
+
+# The one destructive action must be anchored to the unspoofable identifier.
+expect "leave confirmation is built by leaveMessage()" \
+  'grep -q "message: root.leaveMessage(root.pendingLeave)" "$root/Panel.qml"'
+
+expect "leaveMessage() always includes the nwid" \
+  '[ "$(sed -n "/function leaveMessage/,/^  }/p" "$root/Panel.qml" | grep -c "nwid")" -ge 3 ]'
+
 # --- 2. runtime --------------------------------------------------------------
 
 qmlbin="$(command -v qml6 || command -v qml || true)"
 if [ -z "$qmlbin" ]; then
   echo "SKIP runtime rich-text probe (no qml runtime on PATH)"
 else
-  probe_out="$(python3 "$here/richtext-probe.py" "$root/Service.qml" "$qmlbin" 2>&1)"
+  probe_out="$(python3 "$here/richtext-probe.py" "$root/Service.qml" "$root/Panel.qml" "$qmlbin" 2>&1)"
   probe_rc=$?
   echo "$probe_out"
-  expect "runtime: AutoText/PlainText/plain() probe" '[ "'"$probe_rc"'" = 0 ]'
+  expect "runtime: rich-text, plain() and leaveMessage() probe" '[ "'"$probe_rc"'" = 0 ]'
 fi
 
 echo "----"

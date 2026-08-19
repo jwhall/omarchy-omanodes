@@ -49,9 +49,29 @@ Item {
   // An escaped `&lt;` can still flip a stray AutoText sink into rich-text
   // mode, but entity decoding happens after tokenisation, so it can only
   // ever produce a literal `<` glyph in a text run — never a tag.
+  // The second class is display spoofing rather than URL loading: explicit
+  // Unicode bidi embeddings, overrides and isolates (U+202A-U+202E,
+  // U+2066-U+2069) reorder how a name renders, so a controller can make one
+  // network's name read like another's. That matters because leaving a
+  // network is the one destructive action this widget offers. They are
+  // dropped outright — legitimate right-to-left names render correctly from
+  // the characters' own inherent directionality under the Unicode
+  // Bidirectional Algorithm (UAX #9), so a short label essentially never
+  // needs an explicit override.
+  //
+  // Deliberately kept: U+200E/U+200F/U+061C (LRM/RLM/ALM) are single-
+  // character directional hints that cannot override a run, and
+  // U+200C/U+200D (ZWNJ/ZWJ) are required for correct rendering of Persian,
+  // Indic scripts and emoji sequences.
+  //
+  // Confusables (Cyrillic "a" for Latin "a") and zero-width characters are
+  // NOT handled here and cannot be: banning non-Latin scripts is not an
+  // option. Panel.qml's leaveMessage() answers that structurally instead, by
+  // anchoring the destructive confirmation to the nwid.
   function plain(value) {
     return String(value === undefined || value === null ? "" : value)
       .replace(/[\u0000-\u001f\u007f-\u009f]/g, " ")
+      .replace(/[\u202a-\u202e\u2066-\u2069]/g, "")
       .replace(/</g, "\u2039")
       .replace(/>/g, "\u203a")
   }

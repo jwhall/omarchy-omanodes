@@ -210,6 +210,28 @@ HTTP server: the unmitigated `AutoText` case must fetch the beacon (otherwise
 the probe is not measuring anything), while the `PlainText` case and
 `plain()`'s output must not.
 
+A second, lower-severity class is display spoofing rather than URL loading. A
+name can carry Unicode that changes how it *reads*:
+
+- **Explicit bidi controls** (U+202A–U+202E, U+2066–U+2069) reorder the
+  rendered text. `Service.plain()` drops them. Legitimate right-to-left names
+  need no explicit override — they render from the characters' own inherent
+  directionality under [UAX #9](https://www.unicode.org/reports/tr9/) — so
+  this costs nothing in fidelity. The directional marks U+200E/U+200F/U+061C
+  and the joiners U+200C/U+200D are deliberately kept; stripping the joiners
+  would break Persian, Indic scripts and emoji sequences.
+- **Confusables and zero-width characters** ([UTS
+  #39](https://www.unicode.org/reports/tr39/)) can make one network's name
+  render like another's. No string sanitising fixes this in general, since
+  banning non-Latin scripts is not an option. It is answered structurally
+  instead: `Panel.leaveMessage()` puts the nwid in the leave confirmation, so
+  the widget's one destructive action is anchored to an identifier the
+  controller cannot forge (the nwid is formatted by the local `zerotier-one`
+  daemon, not supplied as free-form text). The name is length-bounded there so
+  it cannot wrap the nwid off the dialog.
+
+Neither of these is a URL-load or code-execution issue.
+
 ## Uninstall
 
 ```bash
