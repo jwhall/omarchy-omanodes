@@ -241,10 +241,12 @@ Panel {
         implicitHeight: Style.bar.iconCanvas
 
         // The PNG carries transparent padding around the mark, so a 13px box
-        // paints it at the same optical height as the 13px glyph icons.
+        // paints it at the same optical height as the 13px glyph icons. The
+        // glyphs sit one device pixel below the canvas centre, so follow them.
         Image {
           id: barLogoImage
           anchors.centerIn: parent
+          anchors.verticalCenterOffset: 1 / Screen.devicePixelRatio
           width: Style.space(13)
           height: Style.space(13)
           source: Qt.resolvedUrl("assets/zerotier-logo.png")
